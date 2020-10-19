@@ -546,7 +546,6 @@ int main(int argc, char** argv) {
                    [&](const GNode& src) {
                      auto status = graph.getData(src);
                      accum+= (status==0);
-										 if (status==0) printf("Node %d\n", src);
                    },
                    galois::steal(), galois::chunk_size<CHUNK_SIZE>(),
                    galois::no_stats(), galois::loopname("CheckGC"));
