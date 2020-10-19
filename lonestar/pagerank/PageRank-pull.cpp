@@ -288,18 +288,18 @@ int main(int argc, char** argv) {
   galois::reportPageAlloc("MeminfoPre");
 
   uint64_t total_time = 0;
-  galois::StatTimer Tmain;
+  //galois::StatTimer Tmain;
 
 	uint64_t st, nd;
   computeOutDeg(transposeGraph);
-  for(int i = 0 ; i< 16 ; i++){
+  for(int i = 0 ; i < 16 ; i++){
 		//Tmain.start();
 		st= rdtsc();
 		prResidual(transposeGraph);
 		nd = rdtsc();
     //Tmain.stop();
     total_time+=nd-st;//Tmain.get();
-		printf("did a thing\n");
+		printf("did a thing %lu\n", nd-st);
   }
 	double time_variable = total_time / 16.0;
   //galois::reportPageAlloc("MeminfoPost");
