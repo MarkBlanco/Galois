@@ -1,5 +1,5 @@
-app(pagerank-pull PageRank-pull.cpp)
-#app(pagerank-push PageRank-push.cpp)
+app(pi-pull pi_pull.cpp)
+#app(pi-push pi_push.cpp)
 
 #add_test_scale(small pagerank-pull -tolerance=0.01 "${BASEINPUT}/scalefree/transpose/rmat10.tgr")
 #add_test_scale(web pagerank-pull -tolerance=0.01 "${BASEINPUT}/unweighted/twitter-WWW10-component-transpose.gr")

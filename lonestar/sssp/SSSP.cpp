@@ -32,6 +32,17 @@
 
 #include <iostream>
 
+#include<fstream>
+
+unsigned long long rdtsc()
+{
+ unsigned a, d;
+
+ __asm__ volatile("rdtsc" : "=a" (a), "=d" (d));
+
+ return ((unsigned long long)a) | (((unsigned long long)d) << 32);
+}
+
 namespace cll = llvm::cl;
 
 static const char* name = "Single Source Shortest Path";
@@ -94,6 +105,7 @@ constexpr static const bool TRACK_WORK          = false;
 constexpr static const unsigned CHUNK_SIZE      = 64u;
 constexpr static const ptrdiff_t EDGE_TILE_SIZE = 512;
 
+// the true below means use edge weight
 using SSSP                 = BFS_SSSP<Graph, uint32_t, true, EDGE_TILE_SIZE>;
 using Dist                 = SSSP::Dist;
 using UpdateRequest        = SSSP::UpdateRequest;
@@ -398,58 +410,33 @@ int main(int argc, char** argv) {
         << "WARNING: Do not expect the default to be good for your graph.\n";
   }
 
-  galois::do_all(galois::iterate(graph),
-                 [&graph](GNode n) { graph.getData(n) = SSSP::DIST_INFINITY; });
 
-  graph.getData(source) = 0;
+ uint64_t total_time = 0, st, nd;
+  for(int i = 0; i < 64; i++){
+    std::cin>>source;
+		galois::do_all(galois::iterate(graph),
+				[&graph](GNode n) { graph.getData(n) = SSSP::DIST_INFINITY; });
 
-  std::cout << "Running " << ALGO_NAMES[algo] << " algorithm" << std::endl;
+		graph.getData(source) = 0;
 
-  galois::StatTimer Tmain;
-  Tmain.start();
-
-  switch (algo) {
-  case deltaTile:
-    deltaStepAlgo<SrcEdgeTile>(graph, source, SrcEdgeTilePushWrap{graph},
-                               TileRangeFn());
-    break;
-  case deltaStep:
-    deltaStepAlgo<UpdateRequest>(graph, source, ReqPushWrap(),
-                                 OutEdgeRangeFn{graph});
-    break;
-  case serDeltaTile:
-    serDeltaAlgo<SrcEdgeTile>(graph, source, SrcEdgeTilePushWrap{graph},
-                              TileRangeFn());
-    break;
-  case serDelta:
-    serDeltaAlgo<UpdateRequest>(graph, source, ReqPushWrap(),
-                                OutEdgeRangeFn{graph});
-    break;
-  case dijkstraTile:
-    dijkstraAlgo<SrcEdgeTile>(graph, source, SrcEdgeTilePushWrap{graph},
-                              TileRangeFn());
-    break;
-  case dijkstra:
-    dijkstraAlgo<UpdateRequest>(graph, source, ReqPushWrap(),
-                                OutEdgeRangeFn{graph});
-    break;
-  case topo:
-    topoAlgo(graph, source);
-    break;
-  case topoTile:
-    topoTileAlgo(graph, source);
-    break;
-  default:
-    std::abort();
+		//galois::StatTimer Tmain;
+		//Tmain.start();
+		st = rdtsc();
+		deltaStepAlgo<UpdateRequest>(graph, source, ReqPushWrap(),
+				OutEdgeRangeFn{graph});
+		//Tmain.stop();
+		nd = rdtsc();
+		total_time += nd-st;//Tmain.get();
+		printf("did a thing\n");
   }
-
-  Tmain.stop();
-
-  galois::reportPageAlloc("MeminfoPost");
+	double time_variable = total_time / 64.0;
+	printf("PR Time: %f CYCLES CONVERT THIS\n", (double)time_variable); //<<std::endl;
+  
+	
+	galois::reportPageAlloc("MeminfoPost");
 
   std::cout << "Node " << reportNode << " has distance "
             << graph.getData(report) << "\n";
-
   if (!skipVerify) {
     if (SSSP::verify(graph, source)) {
       std::cout << "Verification successful.\n";

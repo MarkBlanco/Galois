@@ -26,6 +26,18 @@
 #include "galois/graphs/TypeTraits.h"
 #include "galois/gstl.h"
 
+#include<fstream>
+
+
+unsigned long long rdtsc()
+{
+ unsigned a, d;
+
+ __asm__ volatile("rdtsc" : "=a" (a), "=d" (d));
+
+ return ((unsigned long long)a) | (((unsigned long long)d) << 32);
+}
+
 const char* desc =
     "Computes page ranks a la Page and Brin. This is a pull-style algorithm.";
 
@@ -70,7 +82,7 @@ void initNodeDataResidual(Graph& g, DeltaArray& delta,
                  [&](const GNode& n) {
                    auto& sdata = g.getData(n, galois::MethodFlag::UNPROTECTED);
                    sdata.value = 0;
-                   sdata.nout  = 0;
+                   //sdata.nout  = 0;
                    delta[n]    = 0;
                    residual[n] = INIT_RESIDUAL;
                  },
@@ -235,6 +247,7 @@ void prTopological(Graph& graph) {
   prTimer.start();
   computePRTopological(graph);
   prTimer.stop();
+  std::cout<<"Time:"<<prTimer.get_usec()<<std::endl;
 }
 
 void prResidual(Graph& graph) {
@@ -244,11 +257,11 @@ void prResidual(Graph& graph) {
   residual.allocateInterleaved(graph.size());
 
   initNodeDataResidual(graph, delta, residual);
-  computeOutDeg(graph);
-  galois::StatTimer prTimer;
-  prTimer.start();
+  //galois::StatTimer prTimer;
+  //prTimer.start();
   computePRResidual(graph, delta, residual);
-  prTimer.stop();
+  //prTimer.stop();
+  //std::cout<<"Time:"<<prTimer.get_usec()<<std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -274,31 +287,33 @@ int main(int argc, char** argv) {
                                         galois::runtime::pagePoolSize());
   galois::reportPageAlloc("MeminfoPre");
 
-  switch (algo) {
-  case Topo: {
-    std::cout << "Running Pull Topological version, tolerance:" << tolerance
-              << ", maxIterations:" << maxIterations << "\n";
-    prTopological(transposeGraph);
-    break;
-  }
-  case Residual: {
-    std::cout << "Running Pull Residual version, tolerance:" << tolerance
-              << ", maxIterations:" << maxIterations << "\n";
-    prResidual(transposeGraph);
-    break;
-  }
-  default: { std::abort(); }
-  }
+  uint64_t total_time = 0;
+  galois::StatTimer Tmain;
 
-  galois::reportPageAlloc("MeminfoPost");
-
-  if (!skipVerify) {
-    printTop(transposeGraph);
+	uint64_t st, nd;
+  computeOutDeg(transposeGraph);
+  for(int i = 0 ; i< 16 ; i++){
+		//Tmain.start();
+		st= rdtsc();
+		prResidual(transposeGraph);
+		nd = rdtsc();
+    //Tmain.stop();
+    total_time+=nd-st;//Tmain.get();
+		printf("did a thing\n");
   }
+	double time_variable = total_time / 16.0;
+  //galois::reportPageAlloc("MeminfoPost");
+  //std::ofstream outfile("op");
+  //outfile<<
+	printf("PR Time: %f CYCLES CONVERT THIS\n", (double)time_variable); //<<std::endl;
+  //outfile.close();
+  // if (!skipVerify) {
+  //   printTop(transposeGraph);
+  // }
 
-#if DEBUG
-  printPageRank(transposeGraph);
-#endif
+// #if DEBUG
+//   printPageRank(transposeGraph);
+// #endif
 
   overheadTime.stop();
   return 0;
