@@ -58,7 +58,7 @@ struct LNode {
   PRTy normalized_out_weight;
 };
 
-typedef galois::graphs::LC_CSR_Graph<LNode, int>::with_no_lockable<
+typedef galois::graphs::LC_CSR_Graph<LNode, void>::with_no_lockable<
     true>::type ::with_numa_alloc<true>::type Graph;
 typedef typename Graph::GraphNode GNode;
 
@@ -108,7 +108,7 @@ void computeoutdegsums(Graph& graph, galois::LargeArray<std::atomic<size_t>>& ve
                      //TODO:use real edgeweight
                      //std::cout<<"ew"<<weight<<std::endl;
                      //assume ew=1
-                     vec[dst].fetch_add(graph.getEdgeData(nbr));
+                     vec[dst].fetch_add(1ul);
                    };
                    //std::cout<<std::endl;
                  },
@@ -157,11 +157,11 @@ void computePRResidual(Graph& graph) {
                      // std::cout<<src<<" = " << ALPHA <<"( ";
                      for (auto nbr : graph.edges(src)) {
                        GNode dst = graph.getEdgeDst(nbr);
-                       auto ew = graph.getEdgeData(nbr);
+                       //auto ew = graph.getEdgeData(nbr);
                        // std::cout << ew <<"\t";
                        auto& ddata = graph.getData(dst);
                        // std::cout<< ew <<"("<< dst <<")" <<"*" <<ddata.value << "*" <<ddata.normalized_out_weight<< " + ";
-                       update += ew*ddata.value*ddata.normalized_out_weight;
+                       update += ddata.value*ddata.normalized_out_weight;
                      }
 
                      update *= ALPHA;
