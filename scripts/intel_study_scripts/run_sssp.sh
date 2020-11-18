@@ -1,5 +1,8 @@
 #!/bin/bash
 
+GALOIS_BUILD=/home/markb1/Repos/Galois_Master/BUILD/
+INPUT_DIR=/sharedstorage/markb1/GAP_data/galois_format/
+
 echo -e "USAGE: ./run_sssp.sh <numRuns>\n"
 appname=sssp
 
@@ -28,17 +31,12 @@ echo ${execDir}
 
 exec=sssp-cpu
 
-for configType in $(seq 1 2)
+for configType in $(seq 1)
 do
-  if [ ${configType} == 1 ]; then
-    echo "Running ${appname} with config1"
-    export GOMP_CPU_AFFINITY="0-31"
-    export KMP_AFFINITY="verbose,explicit,proclist=[0-31]"
-    Threads=32
-  else
-    echo "Running ${appname} with config2"
-    Threads=64
-  fi
+	echo "Running ${appname} with config1"
+	export GOMP_CPU_AFFINITY="0-31"
+	export KMP_AFFINITY="verbose,explicit,proclist=[0-31]"
+	Threads=32
 
   for run in $(seq 1 ${numRuns})
   do
@@ -52,9 +50,7 @@ do
         extension=sgr
       fi
 
-      if [ ${configType} == 1 ]; then 
-        algo="AutoAlgo"
-      elif [ ${input} == "road" ]; then # ${configType} == 2
+      if [ ${input} == "road" ]; then # ${configType} == 2
         algo="deltaStep"
       else # ${configType} == 2
         algo="deltaStepBarrier"
@@ -76,7 +72,7 @@ do
         source_node=$((${p} - 1))
         filename="${appname}_${input}_source_${source_node}_algo_${algo}_${configType}_Run${run}"
         statfile="${filename}.stats"
-        ${execDir}/${exec} -t=${Threads} -delta=${delta} -algo=$algo $inputDir/GAP-${input}.${extension} -startNode=${source_node} -statFile=${execDir}/logs/${input}/${statfile} &> ${execDir}/logs/${input}/${filename}.out
+        ${execDir}/${exec} -t=${Threads} -delta=${delta} -algo=$algo $inputDir/${input}.${extension} -startNode=${source_node} -statFile=${execDir}/logs/${input}/${statfile} &> ${execDir}/logs/${input}/${filename}.out
       done < $inputDir/sources/GAP-${input}_sources.mtx
     done
   done
