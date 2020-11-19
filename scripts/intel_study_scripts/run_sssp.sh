@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GALOIS_BUILD=/home/markb1/Repos/Galois_Master/BUILD/
+GALOIS_BUILD=/home/markb1/Repos/myGalois/BUILD/
 INPUT_DIR=/sharedstorage/markb1/GAP_data/galois_format/
 
 echo -e "USAGE: ./run_sssp.sh <numRuns>\n"

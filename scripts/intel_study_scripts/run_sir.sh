@@ -3,8 +3,8 @@
 GALOIS_BUILD=/home/markb1/Repos/myGalois/BUILD/
 INPUT_DIR=/sharedstorage/markb1/GAP_data/galois_format/
 
-echo -e "USAGE: ./run_pr.sh <numRuns>\n"
-appname="pagerank"
+echo -e "USAGE: ./run_sir.sh <numRuns>\n"
+appname=sir
 
 numRuns=$1
 if [ -z $numRuns ]; then
@@ -28,16 +28,8 @@ fi
 inputDir="${INPUT_DIR}"
 execDir="${GALOIS_BUILD}/lonestar/analytics/cpu/${appname}"
 echo ${execDir}
-if [ ! -d "${execDir}/logs/" ]; then
-  mkdir -p ${execDir}/logs/
-fi
-echo "Logs will be available in ${execDir}/logs/"
 
-exec="pagerank-pull-cpu"
-
-algo="Topo"
-tol=1e-4
-maxIter=1000
+exec=sir
 
 for configType in $(seq 1)
 do
@@ -48,19 +40,25 @@ do
 
   for run in $(seq 1 ${numRuns})
   do
-    for input in "kron" "road" "urand" "web" "twitter"
+    for input in "road" #"kron" "road" "urand" "web" "twitter"
     do
       if [ ${input} == "web" ] || [ ${input} == "twitter" ]; then 
-        ##NOTE: Using tgr for directed graphs
-        extension=tgr
+        ##NOTE: Using gr for directed graphs
+        extension=gr
       else # kron road urand
         ##NOTE: Using sgr for undirected graphs
         extension=sgr
       fi
+
       echo "Running on ${input}"
-      filename="${appname}_${input}_algo_${algo}_${configType}_Run${run}"
-      statfile="${filename}.stats"
-      ${execDir}/${exec} -algo=$algo -t=${Threads} $inputDir/${input}.${extension} -tolerance=${tol} -maxIterations=${maxIter} -transposedGraph -statFile=${execDir}/logs/${statfile} &> ${execDir}/logs/${filename}.out
+      echo "Logs will be available in ${execDir}/logs/${input}"
+      if [ ! -d "${execDir}/logs/${input}" ]; then
+        mkdir -p ${execDir}/logs/${input}
+      fi
+
+			filename="${appname}_${input}_source_${source_node}_algo_${algo}_${configType}_Run${run}"
+			statfile="${filename}.stats"
+			${execDir}/${exec} -t=${Threads} -exec=PARALLEL $inputDir/${input}.${extension} -statFile=${execDir}/logs/${input}/${statfile} < $inputDir/sources/${input}.sources &> ${execDir}/logs/${input}/${filename}.out
     done
   done
 done

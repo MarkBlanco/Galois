@@ -165,7 +165,7 @@ void computePRTopological(Graph& graph) {
                     ej = graph.edge_end(src, flag);
                jj != ej; ++jj) {
             GNode dst = graph.getEdgeDst(jj);
-						auto ew = graph.getEdgeData(nbr);
+						auto ew = graph.getEdgeData(jj);
 
             LNode& ddata = graph.getData(dst, flag);
 						sum += ew*ddata.value*ddata.normalized_out_weight;
@@ -182,10 +182,10 @@ void computePRTopological(Graph& graph) {
           //sdata.value = value;
           //accum += diff;
 					
-					update *= ALPHA;
-					update += sdata.restart_init;
-					accum += fabs(update-sdata.value);
-					sdata.value = update;
+					sum *= ALPHA;
+					sum += sdata.restart_init;
+					accum += fabs(sum-sdata.value);
+					sdata.value = sum;
         },
         galois::no_stats(), galois::steal(), galois::chunk_size<CHUNK_SIZE>(),
         galois::loopname("ProteinInteraction-Topo"));
@@ -270,7 +270,7 @@ void prTopological(Graph& graph, galois::LargeArray<std::atomic<size_t>>& in_wei
   //galois::StatTimer execTime("Timer_0");
   //execTime.start();
   initNodeDataTopological(graph);
-  computeOutDeg(graph, in_weights);
+  computeoutdeg(graph, in_weights);
   computePRTopological(graph);
   //execTime.stop();
 }
@@ -287,7 +287,7 @@ void prResidual(Graph& graph, galois::LargeArray<std::atomic<size_t>>& in_weight
   computeoutdeg(graph, in_weights);
   computePRResidual(graph);
   //prTimer.stop();
-  //std::cout<<"Time: "<<prTimer.get()<<std::endl;
+  //std::cout<<"Time: "<<prTimer.get_usec()<<std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -325,7 +325,7 @@ int main(int argc, char** argv) {
   // case Residual: {
 		//prResidual(transposeGraph, in_weights);
 #define ITERS 16
-	galois::StatTimer t_main("LOOK AT ME");
+	galois::StatTimer t_main("Protein Interaction App Timer");
 	uint64_t acc = 0;
 	galois::LargeArray<std::atomic<size_t>>  in_weights;
 	in_weights.allocateInterleaved(transposeGraph.size());
@@ -338,12 +338,12 @@ int main(int argc, char** argv) {
 		prTopological(transposeGraph, in_weights);
 		//uint64_t nd = rdtsc();//omp_get_wtime();
 		t_main.stop();
-		acc += t_main.get(); //nd-st; //t_main.get();
-		printf("Trial %u time: %f s\n", i, t_main.get());
+		acc += t_main.get_usec();
+		printf("Trial %u time: %f s\n", i, (double)t_main.get_usec() / 1000000);
 	}
-	double time = acc / ((double)ITERS );
+	double t_time = acc / ((double)ITERS );
 	//printf("Average time for %d trials: %f CYCLES CONVERT THIS\n", ITERS, time);
-	printf("Average time for %d trials: %f s\n", ITERS, time);
+	printf("Avg PI Time: %f s\n", (double)t_time / 1000000); //<<std::endl;
 	
   //   break;
   // }

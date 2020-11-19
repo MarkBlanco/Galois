@@ -491,7 +491,7 @@ int main(int argc, char** argv) {
 			std::cout<<std::endl;
 	}
 
-	uint64_t acc=0, st,nd;
+	uint64_t acc=0;//, st,nd;
 	for (uint32_t i = 0; i < 16; i++){
 
 		//All nodes are initialized to be susceptible
@@ -504,10 +504,10 @@ int main(int argc, char** argv) {
 			<< (bool(execution) ? "PARALLEL" : "SERIAL") << " execution "
 			<< std::endl;
 
-		//galois::StatTimer Tmain;
-		//Tmain.start();
+		galois::StatTimer Tmain("SIR App Timer");
+		Tmain.start();
 
-		st = rdtsc();
+		//st = rdtsc();
 		//set infected nodes
 		for(int i = 0; i < 64; i++){
 			graph.getData(sources[i]) = 1;
@@ -521,14 +521,15 @@ int main(int argc, char** argv) {
 		//		<< std::endl;
 		//	std::abort();
 		//}
-		nd = rdtsc();
-		acc += nd-st;
-
-		//Tmain.stop();
-		printf("I did a thing\n");	
+		Tmain.stop();
+		//nd = rdtsc();
+		//acc += nd-st;
+		acc += Tmain.get_usec();
+		printf("Trial %u time: %f s\n", i, (double)Tmain.get_usec() / 1000000);
 	}
 	double t_time = acc / 16.0;
-	printf("SIR Time: %f CYCLES CONVERT THIS\n", (double)t_time); //<<std::endl;
+//	printf("SIR Time: %f CYCLES CONVERT THIS\n", (double)t_time); //<<std::endl;
+	printf("Avg SIR Time: %f s\n", (double)t_time / 1000000); //<<std::endl;
 
 
   galois::reportPageAlloc("MeminfoPost");
