@@ -89,8 +89,7 @@ const char* const ALGO_NAMES[] = {"AsyncTile", "Async",      "SyncTile",
 static cll::opt<Exec> execution(
     "exec",
     cll::desc("Choose SERIAL or PARALLEL execution (default value PARALLEL):"),
-    cll::values(clEnumVal(SERIAL, "SERIAL"), clEnumVal(PARALLEL, "PARALLEL"),
-                clEnumValEnd),
+    cll::values(clEnumVal(SERIAL, "SERIAL"), clEnumVal(PARALLEL, "PARALLEL")),
     cll::init(PARALLEL));
 
 static cll::opt<Algo> algo(
@@ -98,7 +97,7 @@ static cll::opt<Algo> algo(
     cll::values(clEnumVal(AsyncTile, "AsyncTile"), clEnumVal(Async, "Async"),
                 clEnumVal(SyncTile, "SyncTile"), clEnumVal(Sync, "Sync"),
                 clEnumVal(Sync2pTile, "Sync2pTile"),
-                clEnumVal(Sync2p, "Sync2p"), clEnumValEnd),
+                clEnumVal(Sync2p, "Sync2p")),
     cll::init(SyncTile));
 
 using Graph =
@@ -137,7 +136,7 @@ struct EdgeTileMaker {
 struct NodePushWrap {
 
   template <typename C>
-  void operator()(C& cont, const GNode& n, const char* const _parallel) const {
+  void operator()(C& cont, const GNode& n, const char* const) const {
     (*this)(cont, n);
   }
 
@@ -412,7 +411,7 @@ void syncAlgo(Graph& graph, const P& pushWrap,
 // }
 
 template <bool CONCURRENT>
-void runAlgo(Graph& graph, const GNode& source) {
+void runAlgo(Graph& graph) {
 
   // switch (algo) {
   // case AsyncTile:
@@ -446,11 +445,11 @@ void runAlgo(Graph& graph, const GNode& source) {
 
 int main(int argc, char** argv) {
   galois::SharedMemSys G;
-  LonestarStart(argc, argv, name, desc, url);
+  LonestarStart(argc, argv, name, desc, url, &filename);
 
 
   Graph graph;
-  GNode source, report;
+  //GNode source, report;
 
   std::cout << "Reading from file: " << filename << std::endl;
   galois::graphs::readGraph(graph, filename);
@@ -459,19 +458,21 @@ int main(int argc, char** argv) {
 
 
 
-  if (startNode >= graph.size() || reportNode >= graph.size()) {
-    std::cerr << "failed to set report: " << reportNode
-              << " or failed to set source: " << startNode << "\n";
-    assert(0);
-    abort();
-  }
+  //if (startNode >= graph.size() || reportNode >= graph.size()) {
+  //  std::cerr << "failed to set report: " << reportNode
+  //            << " or failed to set source: " << startNode << "\n";
+  //  assert(0);
+  //  abort();
+  //}
 
-  auto it = graph.begin();
-  std::advance(it, startNode);
-  source = *it;
-  it     = graph.begin();
-  std::advance(it, reportNode);
-  report = *it;
+	// Garbage not neede anymore....
+  //auto it = graph.begin();
+  ////std::advance(it, startNode);
+  //source = *it;
+  //it     = graph.begin();
+  ////std::advance(it, reportNode);
+  //report = *it;
+	////////
 
   size_t approxNodeData = 4 * (graph.size() + graph.sizeEdges());
   // size_t approxEdgeData = graph.sizeEdges() * sizeof(typename
@@ -514,7 +515,7 @@ int main(int argc, char** argv) {
 		//if (execution == SERIAL) {
 		//	runAlgo<false>(graph, source);
 		//} else if (execution == PARALLEL) {
-		runAlgo<true>(graph, source);
+		runAlgo<true>(graph);
 		//} else {
 		//	std::cerr << "ERROR: unknown type of execution passed to -exec"
 		//		<< std::endl;
@@ -532,8 +533,8 @@ int main(int argc, char** argv) {
 
   galois::reportPageAlloc("MeminfoPost");
 
-  std::cout << "Node " << reportNode << " has distance "
-            << graph.getData(report) << "\n";
+  //std::cout << "Node " << reportNode << " has distance "
+  //<< graph.getData(report) << "\n";
 
   if (!skipVerify) {
     // if (BFS::verify(graph, source)) {
