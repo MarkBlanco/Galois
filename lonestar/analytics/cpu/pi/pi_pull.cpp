@@ -325,12 +325,12 @@ int main(int argc, char** argv) {
   // case Residual: {
 		//prResidual(transposeGraph, in_weights);
 #define ITERS 16
-	galois::StatTimer t_main("Protein Interaction App Timer");
 	uint64_t acc = 0;
 	galois::LargeArray<std::atomic<size_t>>  in_weights;
 	in_weights.allocateInterleaved(transposeGraph.size());
 	computeoutdegsums(transposeGraph, in_weights);
 	for (uint32_t i = 0; i < ITERS; i++){
+		galois::StatTimer t_main("Protein Interaction App Timer");
 		std::cout << "Running Pull Topological version, tolerance:" << tolerance
 			<< ", maxIterations:" << maxIterations << "\n";
 		//uint64_t st = rdtsc();//omp_get_wtime();
