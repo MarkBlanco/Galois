@@ -45,8 +45,7 @@ const char* const ALGO_NAMES[] = {"Topological", "Residual"};
 
 static cll::opt<Algo> algo("algo", cll::desc("Choose an algorithm:"),
                            cll::values(clEnumVal(Topo, "Topological"),
-                                       clEnumVal(Residual, "Residual"),
-                                       clEnumValEnd),
+                                       clEnumVal(Residual, "Residual")),
                            cll::init(Residual));
 
 constexpr static const unsigned CHUNK_SIZE = 32;
@@ -66,15 +65,17 @@ using DeltaArray    = galois::LargeArray<PRTy>;
 using ResidualArray = galois::LargeArray<PRTy>;
 
 //! [example of no_stats]
-// void initNodeDataTopological(Graph& g) {
-//   galois::do_all(galois::iterate(g),
-//                  [&](const GNode& n) {
-//                    auto& sdata = g.getData(n, galois::MethodFlag::UNPROTECTED);
-//                    sdata.value = INIT_RESIDUAL;
-//                    sdata.nout  = 0;
-//                  },
-//                  galois::no_stats(), galois::loopname("initNodeData"));
-// }
+void initNodeDataTopological(Graph& g) {
+  galois::do_all(galois::iterate(g),
+                 [&](const GNode& n) {
+                   auto& sdata = g.getData(n, galois::MethodFlag::UNPROTECTED);
+                   sdata.value = (1.0/g.size());
+                   sdata.restart_init = INIT_RESIDUAL*(1.0/g.size());
+                   sdata.nout  = 0;
+                   sdata.normalized_out_weight = 1.0;
+                 },
+                 galois::no_stats(), galois::loopname("initNodeData"));
+}
 //! [example of no_stats]
 
 void initNodeDataResidual(Graph& g) {
@@ -215,7 +216,7 @@ int main(int argc, char** argv) {
   std::cout<<"This is pull\n";
 
   galois::SharedMemSys G;
-  LonestarStart(argc, argv, name, desc, url);
+  LonestarStart(argc, argv, name, desc, url, &filename);
 
   galois::StatTimer overheadTime("OverheadTime");
   overheadTime.start();
