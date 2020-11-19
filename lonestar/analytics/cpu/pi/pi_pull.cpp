@@ -142,11 +142,78 @@ void computeoutdeg(Graph& graph, galois::LargeArray<std::atomic<size_t>>& vec) {
   outDegreeTimer.stop();
 }
 
+/**
+ * PageRank pull topological.
+ * Always calculate the new pagerank for each iteration.
+ */
+void computePRTopological(Graph& graph) {
+  unsigned int iteration = 0;
+  galois::GAccumulator<float> accum;
+
+  //float base_score = (1.0f - ALPHA) / graph.size();
+  while (true) {
+    galois::do_all(
+        galois::iterate(graph),
+        [&](const GNode& src) {
+          constexpr const galois::MethodFlag flag =
+              galois::MethodFlag::UNPROTECTED;
+
+          LNode& sdata = graph.getData(src, flag);
+          float sum    = 0.0;
+
+          for (auto jj = graph.edge_begin(src, flag),
+                    ej = graph.edge_end(src, flag);
+               jj != ej; ++jj) {
+            GNode dst = graph.getEdgeDst(jj);
+						auto ew = graph.getEdgeData(nbr);
+
+            LNode& ddata = graph.getData(dst, flag);
+						sum += ew*ddata.value*ddata.normalized_out_weight;
+          }
+
+          //! New value of pagerank after computing contributions from
+          //! incoming edges in the original graph.
+          //float value = sum * ALPHA + base_score;
+          //! Find the delta in new and old pagerank values.
+          //float diff = std::fabs(value - sdata.value);
+
+          //! Do not update pagerank before the diff is computed since
+          //! there is a data dependence on the pagerank value.
+          //sdata.value = value;
+          //accum += diff;
+					
+					update *= ALPHA;
+					update += sdata.restart_init;
+					accum += fabs(update-sdata.value);
+					sdata.value = update;
+        },
+        galois::no_stats(), galois::steal(), galois::chunk_size<CHUNK_SIZE>(),
+        galois::loopname("ProteinInteraction-Topo"));
+
+#if DEBUG
+    std::cout << "iteration: " << iteration << " max delta: " << delta << "\n";
+#endif
+
+    iteration += 1;
+    if (accum.reduce() <= tolerance || iteration >= maxIterations) {
+      break;
+    }
+    accum.reset();
+
+  } ///< End while(true).
+
+  galois::runtime::reportStat_Single("ProteinInteraction", "Rounds", iteration);
+  if (iteration >= maxIterations) {
+    std::cerr << "ERROR: failed to converge in " << iteration
+              << " iterations\n";
+  }
+}
+
+
 //! [scalarreduction]
 void computePRResidual(Graph& graph) {
   unsigned int iterations = 0;
   galois::GAccumulator<PRTy> accum;
-
 
   while (true) {
     galois::do_all(galois::iterate(graph),
@@ -173,7 +240,7 @@ void computePRResidual(Graph& graph) {
 
                    },
                    galois::steal(), galois::chunk_size<CHUNK_SIZE>(),
-                   galois::no_stats(), galois::loopname("PageRank-HI"));
+                   galois::no_stats(), galois::loopname("ProteinInteraction-Resid"));
 
 #if DEBUG
     std::cout << "iteration: " << iterations << "\n";
@@ -196,6 +263,17 @@ void computePRResidual(Graph& graph) {
   }
 }
 //! [scalarreduction]
+
+
+void prTopological(Graph& graph, galois::LargeArray<std::atomic<size_t>>& in_weights) {
+
+  //galois::StatTimer execTime("Timer_0");
+  //execTime.start();
+  initNodeDataTopological(graph);
+  computeOutDeg(graph, in_weights);
+  computePRTopological(graph);
+  //execTime.stop();
+}
 
 void prResidual(Graph& graph, galois::LargeArray<std::atomic<size_t>>& in_weights) {
   //DeltaArray delta;
@@ -245,6 +323,7 @@ int main(int argc, char** argv) {
   //   break;
   // }
   // case Residual: {
+		//prResidual(transposeGraph, in_weights);
 #define ITERS 16
 	galois::StatTimer t_main("LOOK AT ME");
 	uint64_t acc = 0;
@@ -252,17 +331,19 @@ int main(int argc, char** argv) {
 	in_weights.allocateInterleaved(transposeGraph.size());
 	computeoutdegsums(transposeGraph, in_weights);
 	for (uint32_t i = 0; i < ITERS; i++){
-		std::cout << "Running Pull Residual version, tolerance:" << tolerance
+		std::cout << "Running Pull Topological version, tolerance:" << tolerance
 			<< ", maxIterations:" << maxIterations << "\n";
-		uint64_t st = rdtsc();//omp_get_wtime();
-		//t_main.start();	
-		prResidual(transposeGraph, in_weights);
-		uint64_t nd = rdtsc();//omp_get_wtime();
-		//t_main.stop();
-		acc += nd-st; //t_main.get();
+		//uint64_t st = rdtsc();//omp_get_wtime();
+		t_main.start();	
+		prTopological(transposeGraph, in_weights);
+		//uint64_t nd = rdtsc();//omp_get_wtime();
+		t_main.stop();
+		acc += t_main.get(); //nd-st; //t_main.get();
+		printf("Trial %u time: %f s\n", i, t_main.get());
 	}
 	double time = acc / ((double)ITERS );
-	printf("Average time for %d trials: %f CYCLES CONVERT THIS\n", ITERS, time);
+	//printf("Average time for %d trials: %f CYCLES CONVERT THIS\n", ITERS, time);
+	printf("Average time for %d trials: %f s\n", ITERS, time);
 	
   //   break;
   // }
