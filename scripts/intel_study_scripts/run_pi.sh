@@ -53,7 +53,7 @@ do
     do
       if [ ${input} == "web" ] || [ ${input} == "twitter" ]; then 
         ##NOTE: Using gr for directed graphs. PI does not transpose the graph.
-        extension=tgr
+        extension=gr
       else # kron road urand
         ##NOTE: Using sgr for undirected graphs
         extension=sgr
@@ -61,7 +61,7 @@ do
       echo "Running on ${input}"
       filename="${appname}_${input}_algo_${algo}_${configType}_Run${run}"
       statfile="${filename}.stats"
-      ${execDir}/${exec} -algo=$algo -t=${Threads} $inputDir/${input}.${extension} -tolerance=${tol} -maxIterations=${maxIter} -transposedGraph -statFile=${execDir}/logs/${statfile} &> ${execDir}/logs/${filename}.out
+      ${execDir}/${exec} -algo=$algo -t=${Threads} $inputDir/${input}.${extension} -tolerance=${tol} -maxIterations=${maxIter} -statFile=${execDir}/logs/${statfile} &> ${execDir}/logs/${filename}.out
     done
   done
 done

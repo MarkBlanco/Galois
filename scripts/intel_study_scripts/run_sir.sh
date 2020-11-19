@@ -40,7 +40,7 @@ do
 
   for run in $(seq 1 ${numRuns})
   do
-    for input in "road" #"kron" "road" "urand" "web" "twitter"
+    for input in "kron" "road" "urand" "web" "twitter"
     do
       if [ ${input} == "web" ] || [ ${input} == "twitter" ]; then 
         ##NOTE: Using gr for directed graphs
