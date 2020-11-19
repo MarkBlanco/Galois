@@ -1,0 +1,13 @@
+add_executable(pi-pull pi_pull.cpp)
+add_dependencies(apps pi-pull)
+target_link_libraries(pi-pull PRIVATE Galois::shmem lonestar)
+#app(pi-push pi_push.cpp)
+
+#add_test_scale(small pagerank-pull -tolerance=0.01 "${BASEINPUT}/scalefree/transpose/rmat10.tgr")
+#add_test_scale(web pagerank-pull -tolerance=0.01 "${BASEINPUT}/unweighted/twitter-WWW10-component-transpose.gr")
+#add_test_scale(small-topo pagerank-pull -tolerance=0.01 -algo=Topo "${BASEINPUT}/scalefree/transpose/rmat10.tgr")
+#add_test_scale(topo-web pagerank-pull -tolerance=0.01 -algo=Topo "${BASEINPUT}/unweighted/twitter-WWW10-component-transpose.gr")
+#add_test_scale(small pagerank-push -tolerance=0.01 "${BASEINPUT}/scalefree/transpose/rmat10.tgr")
+#add_test_scale(web pagerank-push -tolerance=0.01 "${BASEINPUT}/unweighted/twitter-WWW10-component-transpose.gr")
+#add_test_scale(small-sync pagerank-push -tolerance=0.01 -algo=Sync "${BASEINPUT}/scalefree/transpose/rmat10.tgr")
+#add_test_scale(sync-web pagerank-pull -tolerance=0.01 -algo=Sync "${BASEINPUT}/unweighted/twitter-WWW10-component-transpose.gr")
