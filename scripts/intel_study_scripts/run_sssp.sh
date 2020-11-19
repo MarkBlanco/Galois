@@ -69,11 +69,11 @@ do
       fi
 
       while read p; do
-        source_node=$((${p} - 1))
+        source_node=$((${p}))
         filename="${appname}_${input}_source_${source_node}_algo_${algo}_${configType}_Run${run}"
         statfile="${filename}.stats"
         ${execDir}/${exec} -t=${Threads} -delta=${delta} -algo=$algo $inputDir/${input}.${extension} -startNode=${source_node} -statFile=${execDir}/logs/${input}/${statfile} &> ${execDir}/logs/${input}/${filename}.out
-      done < $inputDir/sources/GAP-${input}_sources.mtx
+      done < $inputDir/sources/${input}.sources
     done
   done
 done
